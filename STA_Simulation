@@ -1,0 +1,64 @@
+clear; clc;
+
+%% --- Define Netlist (Inline Struct Format) ---
+netlist = {
+    struct('name', 'clk',  'cells', {'U1', 'U2', 'U3', 'U4'});
+    struct('name', 'net1', 'cells', {'U1', 'U5'});
+    struct('name', 'net2', 'cells', {'U2', 'U6'});
+    struct('name', 'net3', 'cells', {'U3', 'U7'});
+    struct('name', 'net4', 'cells', {'U4', 'U8'});
+};
+
+%% --- Simulate Cell Placement (or Load Saved Placement) ---
+num_cells = 8;
+chip_width = 100;
+chip_height = 90;
+x = randi([10, chip_width-10], 1, num_cells);
+y = randi([10, chip_height-10], 1, num_cells);
+
+% Visualize placement
+figure;
+scatter(x, y, 100, 'filled');
+text(x + 2, y + 2, strcat("U", string(1:num_cells)));
+xlim([0 chip_width]); ylim([0 chip_height]);
+grid on; title('STA Analysis'); xlabel('X'); ylabel('Y');
+
+%% --- Static Timing Analysis (STA) with Additional Delay ---
+delay_matrix = zeros(num_cells);
+
+% Compute delay with added gate delay per net
+for i = 1:length(netlist)
+    net_cells = netlist{i}.cells;
+    indexes = str2double(erase(net_cells, "U"));
+    for j = 1:length(indexes)
+        for k = j+1:length(indexes)
+            xi = x(indexes(j)); yi = y(indexes(j));
+            xj = x(indexes(k)); yj = y(indexes(k));
+            dist = sqrt((xi - xj)^2 + (yi - yj)^2);
+            wire_delay = dist / 10;  % Wire delay (ns)
+            gate_delay = 0.1 + rand() * 0.2;  % Gate delay (0.1 to 0.3 ns)
+            total_delay = wire_delay + gate_delay;
+
+            delay_matrix(indexes(j), indexes(k)) = total_delay;
+            delay_matrix(indexes(k), indexes(j)) = total_delay;
+        end
+    end
+end
+
+% Propagate arrival times (max delay path)
+arrival_time = zeros(1, num_cells);
+for i = 1:num_cells
+    for j = 1:num_cells
+        if delay_matrix(i, j) > 0
+            arrival_time(j) = max(arrival_time(j), arrival_time(i) + delay_matrix(i,j));
+        end
+    end
+end
+
+%% --- Display Timing Results ---
+disp("Arrival time at each cell (in ns):");
+for i = 1:num_cells
+    fprintf("U%d: %.3f ns\n", i, arrival_time(i));
+end
+
+fprintf("\n Worst case delay: %.3f ns\n", max(arrival_time));￼Enter
