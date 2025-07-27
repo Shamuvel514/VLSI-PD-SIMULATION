@@ -1,0 +1,23 @@
+clear; clc;
+
+% Parameters
+num_cells = 8;
+chip_width = 100;
+chip_height = 100;
+
+% Random initial placement
+x = randi([10, chip_width-10], 1, num_cells);
+y = randi([10, chip_height-10], 1, num_cells);
+
+% Visualize placement
+figure;
+scatter(x, y, 100, 'filled');
+text(x + 2, y + 2, strcat("U", string(1:num_cells)));
+xlim([0 chip_width]);
+ylim([0 chip_height]);
+grid on;
+title('Initial Cell Placement');
+xlabel('X'); ylabel('Y');
+
+% Save for next stages
+save('floorplan.mat', 'x', 'y');￼Enter
